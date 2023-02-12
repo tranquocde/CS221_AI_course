@@ -1,0 +1,519 @@
+bplist00“_WebMainResource_WebSubresources’	
+^WebResourceURL_WebResourceFrameName_WebResourceData_WebResourceMIMEType_WebResourceTextEncodingName_Nhttps://stanford-cs221.github.io/spring2022/assignments/reconstruct/index.htmlPOMC<html><head>
+  <title>Text Reconstruction</title>
+  <script src="plugins/main.js"></script>
+  <script src="grader-all.js"></script>
+
+  <style type="text/css">
+    .nl { font-family:monospace; }
+  </style>
+</head>
+
+<body onload="onLoad('reconstruct', '<a href=mailto:xniac@stanford.edu>Xiaoyuan Ni<a>', '04/18/2022', 'https://edstem.org/us/courses/21412/discussion/1413064')" data-new-gr-c-s-check-loaded="9.57.0" data-gr-ext-installed="">
+
+<div id="assignmentHeader"></div>
+
+<p><img src="holykeys.png" alt=""></p>
+
+<p>
+  In this homework, we consider two
+  tasks: <i>word segmentation</i> and <i>vowel insertion</i>.
+
+  Word segmentation often comes up when processing many non-English
+  languages, in which words might not be flanked by spaces on either
+  end, such as written Chinese or long compound German
+  words.<sup><a href="#fn-1">[1]</a></sup>
+
+  Vowel insertion is relevant for languages like Arabic or Hebrew,
+  where modern script eschews notations for vowel sounds
+  and the human reader infers them from
+  context.<sup><a href="#fn-2">[2]</a></sup> More generally, this is an
+  instance of a reconstruction problem with a lossy encoding and some
+  context.
+</p>
+<p>
+  We already know how to optimally solve any particular
+  search problem with graph search algorithms such as
+  uniform cost search or A*.  Our goal here is modeling ‚Äî that is,
+  converting real-world tasks into state-space search problems.
+</p>
+
+<p>
+  We've created a LaTeX template <a href="../../with-prompt-templates/reconstruct-template.zip">here</a> for you to use that contains the prompts for each question.
+</p>
+
+<!------------------------------------------------------------>
+<div class="problemTitle">Setup: $n$-gram language models and
+uniform-cost search</div>
+
+<p>
+  Our algorithm will base its segmentation and insertion decisions
+  on the cost of processed text according to a <i>language model</i>.
+  A language model is some function of the processed text that
+  captures its fluency.
+</p>
+
+<p>
+  A very common language model in NLP is an $n$-gram sequence model. This is a
+  function that, given $n$ consecutive words, provides a cost based on
+  the negative log likelihood that the $n$-th word appears just after the first
+  $n-1$ words.<sup><a href="#fn-3">[3]</a></sup>
+
+  The cost will always be positive, and lower costs indicate better
+  fluency.<sup><a href="#fn-4">[4]</a></sup>
+  As a simple example: In a case where $n=2$ and $c$ is our
+  $n$-gram cost function, $c($<span class="nl">big</span>, <span class="nl">fish</span>$)$
+  would be low, but $c($<span class="nl">fish</span>, <span class="nl">fish</span>$)$
+  would be fairly high.
+</p>
+<p>
+  Furthermore, these costs are additive: For a unigram model $u$ ($n = 1$),
+  the cost assigned to $[w_1, w_2, w_3, w_4]$ is
+ \[
+   u(w_1) + u(w_2) + u(w_3) + u(w_4).
+  \]
+
+  Similarly, for a bigram model $b$ ($n = 2$), the cost is
+   \[
+    b(w_0, w_1) +
+    b(w_1, w_2) +
+    b(w_2, w_3) +
+    b(w_3, w_4),
+  \]
+  where $w_0$ is <code>-BEGIN-</code>, a special token that denotes the beginning of the sentence.
+</p>
+
+<p>
+  <b>Note:</b> We have estimated $u$ and $b$ based on the statistics of $n$-grams in text (leo-will.txt).
+  Note that any words not in the corpus (like "hello") are automatically assigned a high cost.
+  This might lead to some unexpected sentences but you do not have to worry about that.
+</p>
+
+<p>
+  A note on low-level efficiency and expectations: This assignment was
+  designed considering input sequences of length no greater than
+  roughly 200, where these sequences can be sequences of characters or of
+  list items, depending on the task.  Of course, it's great if programs
+  can tractably manage larger inputs, but it's okay if such inputs
+  can lead to inefficiency due to overwhelming state space growth.
+</p>
+
+<p>
+	You are encouraged to look over the given codebase and how functions like cleanLine()
+	(in wordsegUtil.py) are called by grader.py and shell.py to preprocess lines.
+</p>
+
+<!------------------------------------------------------------>
+<div class="problemTitle">Problem 1: Word Segmentation</div>
+
+<p>
+  In word segmentation, you are given as input a string of
+  alphabetical characters (<code>[a-z]</code>) without whitespace, and
+  your goal is to insert spaces into this string such that the result
+  is the most fluent according to the language model.
+</p>
+
+<ol class="problem">
+
+<li class="writeup" id="1a">
+  <p>
+    Suppose that we have a unigram model $u$ and we are given the string <span class="nl">breakfastservedinside</span>. 
+    The unigram costs of words are given as $u($<span class="nl">break</span>$)=3$, $u($<span class="nl">fast</span>$)=6$, 
+    $u($<span class="nl">breakfast</span>$)=8$, $u($<span class="nl">served</span>$)=8$,
+    $u($<span class="nl">in</span>$)=3$, $u($<span class="nl">side</span>$)=5$,<br>
+    $u($<span class="nl">inside</span>$)=2$. Assume $u(s)=100$ for any other substring $s$ of our string. 
+  </p>
+
+  <p>Consider the following greedy algorithm:
+  Begin at the front of the string.  Find the
+  ending position for the next word that minimizes the
+  language model cost.
+  Repeat, beginning at the end of this chosen segment.
+  
+  </p><p>
+    What is the total model cost from running this greedy algorithm on <span class="nl">breakfastservedinside</span>? 
+    Is this greedy search optimal for general inputs? In other words, does it find the lowest-cost segmentation of any input?
+    Explain why or why not in 1-2 sentences.
+  </p>
+
+  <div class="expected"> The value of the total model cost and an explanation of why the greedy algorithm is or is not optimal.</div>
+
+</li>
+
+<li class="code" id="1b">
+  <p>
+    Implement an algorithm that finds
+    the optimal word segmentation of an input character sequence.
+    Your algorithm will consider costs based simply on a unigram cost function.
+	<code>UniformCostSearch</code> (UCS) is implemented for you in 
+	<code>util.py</code>, and you should make use of it here.
+	<sup><a href="#fn-5">[5]</a></sup>
+  </p>
+  <p>
+    Before jumping into code, you should think about how to frame
+    this problem as a state-space <b>search problem</b>.  How would you
+    represent a state?  What are the successors of a state?  What are
+    the state transition costs?  (You don't need to answer these
+    questions in your writeup.)
+  </p>
+  <p>
+    Fill in the member functions of
+    the <code>SegmentationProblem</code> class and
+    the <code>segmentWords</code> function.
+
+    The argument <code>unigramCost</code> is a function that takes in
+    a single string representing a word and outputs its unigram cost.
+    You can assume that all of the inputs would be in lower case.
+
+    The function <code>segmentWords</code> should return the segmented
+    sentence with spaces as delimiters, i.e. <code>' '.join(words)</code>.
+
+  </p>
+  <p>
+    For convenience, you can actually run <code>python
+    submission.py</code> to enter a console in which you can type
+    character sequences that will be segmented by your implementation
+    of <code>segmentWords</code>.  To request a segmentation,
+    type <code>seg mystring</code> into the prompt.  For example:
+    </p><pre>      &gt;&gt; seg thisisnotmybeautifulhouse
+
+        Query (seg): thisisnotmybeautifulhouse
+
+        this is not my beautiful house
+    </pre>
+    Console commands other than <code>seg</code> ‚Äî
+    namely <code>ins</code> and <code>both</code> ‚Äî will be used in
+    the upcoming parts of the assignment.  Other commands that might
+    help with debugging can be found by typing <code>help</code> at
+  the prompt.
+  <p>
+    <b>Hint</b>: You are encouraged to refer to <code>NumberLineSearchProblem</code> and <code>GridSearchProblem</code>
+    implemented in <code>util.py</code> for reference. They don't contribute to testing your
+    submitted code but only serve as a guideline for what your code should look like.
+  </p>
+  <p>
+    <b>Hint</b>: The actions that are valid for the <code>ucs</code> object
+    can be accessed through <code>ucs.actions</code>.
+  </p>
+
+  <div class="expected"> An implementation of the member functions of
+    the <code>SegmentationProblem</code> class and
+    the <code>segmentWords</code> function. </div>
+</li>
+
+</ol>
+
+<!------------------------------------------------------------>
+<div class="problemTitle">Problem 2: Vowel Insertion</div>
+
+<p>
+  Now you are given a sequence of English words with their vowels
+  missing (A, E, I, O, and U; never Y).  Your task is to place vowels
+  back into these words in a way that maximizes sentence fluency
+  (i.e., that minimizes sentence cost).  For this task, you will use a
+  bigram cost function.
+</p>
+<p>
+  You are also given a mapping <code>possibleFills</code> that maps
+  any vowel-free word to a set of possible reconstructions (complete
+  words).<sup><a href="#fn-6">[6]</a></sup> For
+  example, <code>possibleFills('fg')</code>
+  returns <code>set(['fugue', 'fog'])</code>.
+</p>
+
+<ol class="problem">
+
+<li class="writeup" id="2a">
+  <p>
+   Consider the following greedy-algorithm: from left to right, repeatedly pick
+   the immediate-best vowel insertion for the current vowel-free word, given
+   the insertion that was chosen for the previous vowel-free word.
+   This algorithm does <i>not</i> take into account future insertions beyond the current word.
+  </p>
+  <p>
+  Show that this greedy algorithm is suboptimal, by providing
+  a realistic counter-example using English text. Make any assumptions you'd like
+  about <code>possibleFills</code> and the bigram cost function, but bigram costs
+  must be positive.
+  </p>
+  <p>
+    In creating this example, lower cost should
+    indicate better fluency. Note that the cost function doesn't need to
+    be explicitly defined. You can just point out the relative cost of
+    different word sequences that are relevant to the example you provide.
+    And your example should be based on a realistic
+    English word sequence ‚Äî don't simply use abstract symbols with
+    designated costs.
+  </p>
+  <div class="expected"> A specific (realistic) example explained within 4 sentences.</div>
+</li>
+
+<li class="code" id="2b">
+  <p>
+     Implement an algorithm that finds optimal vowel insertions.  Use
+    the UCS subroutines.
+  </p>
+  <p>
+    When you've completed your implementation, the
+    function <code>insertVowels</code> should return the reconstructed
+    word sequence as a string with space delimiters, i.e.
+    <code>' '.join(filledWords)</code>. Assume that you have a list of strings as
+    the input, i.e. the sentence has already been split into words for you. Note
+    that the empty string is a valid element of the list.
+  </p>
+  <p>
+    The argument <code>queryWords</code> is the input sequence of
+    vowel-free words.  Note that the empty string is a valid such
+    word.  The argument <code>bigramCost</code> is a function that
+    takes two strings representing two sequential words and provides
+    their bigram score.  The special out-of-vocabulary
+    beginning-of-sentence word <code>-BEGIN-</code> is given
+    by <code>wordsegUtil.SENTENCE_BEGIN</code>.  The
+    argument <code>possibleFills</code> is a function that takes a word
+    as a string and returns a <code>set</code> of
+    reconstructions.
+  </p>
+  <p>
+    Since we use a limited corpus, some seemingly obvious
+    strings may have no filling, such as <code>chclt -&gt; {}</code>,
+    where <code>chocolate</code> is actually a valid filling.
+    Don't worry about these cases.
+  </p>
+  <p>
+    <b>Note:</b> Only for Problem 2, if some vowel-free word $w$
+    has no reconstructions according to <code>possibleFills</code>,
+    your implementation should consider $w$ itself as the sole
+    possible reconstruction. Otherwise you should always use one
+    of its possible completions according to <code>possibleFills</code>.
+    This is NOT the case for Problem 3.
+  </p>
+  <p>
+    Use the <code>ins</code> command in the program console to try
+    your implementation.  For example:
+    </p><pre>      &gt;&gt; ins thts m n th crnr
+
+        Query (ins): thts m n th crnr
+
+        thats me in the corner
+    </pre>
+    The console strips away any vowels you do insert, so you can
+    actually type in plain English and the vowel-free query will be
+    issued to your program.  This also means that you can use a single
+    vowel letter as a means to place an empty string in the sequence.
+    For example:
+    <pre>      &gt;&gt; ins its a beautiful day in the neighborhood
+
+        Query (ins): ts  btfl dy n th nghbrhd
+
+        its a beautiful day in the neighborhood
+    </pre>
+
+    <div class="expected"> An implementation of the member functions of
+    the <code>VowelInsertionProblem</code> class and
+    the <code>insertVowels</code> function. </div>
+</li>
+
+</ol>
+
+<!------------------------------------------------------------>
+<div class="problemTitle">Problem 3: Putting it Together</div>
+
+<p>
+  We'll now see that it's possible to solve both of these tasks at
+  once.  This time, you are given a whitespace-free and vowel-free string
+  of alphabetical characters.  Your goal is to insert spaces and
+  vowels into this string such that the result is as fluent as possible.
+  As in the previous task, costs are based on a bigram cost function.
+</p>
+
+<ol class="problem">
+
+<li class="writeup" id="3a">
+  <p> Consider a search problem for finding the optimal space and
+  vowel insertions. Formalize the problem as a search problem: What
+  are the states, actions, costs, initial state, and end test? Try to find a
+  minimal representation of the states.
+  </p>
+
+    <div class="expected"> A formal definition of the search problem with 
+    definitions for the states, actions, costs, initial state, and end test.</div>
+
+</li>
+
+<li class="code" id="3b">
+  <p>
+     Implement an algorithm that finds the optimal space and
+    vowel insertions.  Use the UCS subroutines.
+  </p>
+  <p>
+    When you've completed your implementation, the
+    function <code>segmentAndInsert</code> should return a segmented
+    and reconstructed word sequence as a string with space delimiters,
+    i.e. <code>' '.join(filledWords)</code>.
+  </p>
+  <p>
+    The argument <code>query</code> is the input string of space- and
+    vowel-free words.  The argument <code>bigramCost</code> is a
+    function that takes two strings representing two sequential words
+    and provides their bigram score.  The special out-of-vocabulary
+    beginning-of-sentence word <code>-BEGIN-</code> is given
+    by <code>wordsegUtil.SENTENCE_BEGIN</code>.  The
+    argument <code>possibleFills</code> is a function that takes a word
+    as a string and returns a <code>set</code> of reconstructions.
+  </p>
+  <p>
+    <b>Note:</b> In problem 2, a vowel-free word could, under certain
+    circumstances, be considered a valid reconstruction of itself.
+    <i>However</i>, for this problem, in your output, you should only include
+    words that are the reconstruction of some vowel-free word according to
+    <code>possibleFills</code>.  Additionally, you should not include words
+    containing only vowels such as <code>a</code> or <code>i</code> or out of
+    vocabulary words; all words should include at least one consonant from the 
+    input string and a solution is guaranteed. Additionally, aim to use
+    a minimal state representation for full credit.
+  </p>
+  <p>
+    Use the command <code>both</code> in the program console to try
+    your implementation.  For example:
+    </p><pre>      &gt;&gt; both mgnllthppl
+
+        Query (both): mgnllthppl
+
+        imagine all the people
+    </pre>
+  <div class="expected"> An implementation of the member functions of
+    the <code>JointSegmentationInsertionProblem</code> class and
+    the <code>segmentAndInsert</code> function. 
+  </div>
+</li>
+</ol>
+
+<!------------------------------------------------------------>
+<div class="problemTitle">Problem 4: Failure Modes and Transparency</div>
+
+<p>
+  Now that you have a working reconstruction algorithm, let‚Äôs try reconstructing a few examples. Take each of the below phrases and pass them to the <code>both</code> command from the program console.
+
+  </p><li>
+    Example 1: ‚Äúyrhnrshwllgrcslyccptthffr‚Äù (original: ‚Äúyour honor she will graciously accept the affair‚Äù)
+  </li><li>
+    Example 2: ‚Äúwlcmtthhttkzn‚Äù (original: ‚Äúwelcome to the hot take zone‚Äù)
+  </li><li>
+    Example 3: ‚Äúgrlwllnrflprrghtnw‚Äù (original: ‚Äúgirl we all in our flop era right now‚Äù)
+  </li>
+<p></p>
+
+<ol class="problem">
+
+<li class="writeup" id="4a">
+  <p>
+    First, indicate which examples were reconstructed correctly versus incorrectly.
+    Recall that the system chooses outputs based on a bigram cost function
+    <sup><a href="#fn-4">[4]</a></sup>,
+    which is roughly low if a bigram occurred in
+    Leo Tolstoy's <i>War and Peace</i> and William Shakespeare's <i>Romeo and Juliet</i>,
+    and high if it didn't (the details don't matter for this problem).
+    Then, explain what about the training data may have led to this behavior.
+  </p>
+  <div class="expected">1-2 sentences listing whether each example was correctly or incorrectly reconstructed  and a brief explanation <u>with justification</u> as to what about the training data may have led to this result.</div>
+</li>
+
+<li class="writeup" id="4b">
+  <p>
+    Your system, like all systems, has limitations and potential points of failure. As a responsible AI practitioner, it‚Äôs important for you to recognize and communicate these limitations to users of the systems you build. Imagine that you are deploying your search algorithm from this assignment to real users on mobile phones.
+    Write a <b>transparency statement</b> for your system,
+    which communicates to users the conditions under which the system should be
+    expected to work and when it might not work.
+  </p>
+  <div class="expected">2-4 sentences explaining the potential failure modes of
+    your system.  Be sure to acknowledge the limitations that your system has
+    and who should know about these limitations (i.e., who are the affected
+    parties?).</div>
+</li>
+
+<li class="writeup" id="4c">
+  <p>
+    Given the limitations found in part (a) and described in your transparency statement from (b), how could you improve your system?
+  </p>
+  <div class="expected">2-4 sentences proposing a change to the datasets, how you would implement it,
+    and why it would address the limitations you identified above.</div>
+</li>
+
+</ol>
+
+<hr>
+<p id="fn-1"> [1]
+  In German, <i>Windschutzscheibenwischer</i> is "windshield wiper".
+  Broken into parts: <i>wind</i> ~ wind; <i>schutz</i> ~ block /
+  protection; <i>scheiben</i> ~ panes; <i>wischer</i> ~ wiper.
+</p>
+<p id="fn-2"> [2]
+  See <a href="https://en.wikipedia.org/wiki/Abjad">https://en.wikipedia.org/wiki/Abjad</a>.
+</p>
+<p id="fn-3"> [3]
+  This model works under the assumption that text roughly satisfies
+  the <a href="https://en.wikipedia.org/wiki/Markov_property">Markov
+  property</a>.
+</p>
+<p id="fn-4"> [4]
+  Modulo edge cases, the $n$-gram model score in this assignment is
+  given by $\ell(w_1, \ldots, w_n) = -\log p(w_n \mid w_1, \ldots,
+  w_{n-1})$.  Here, $p(\cdot)$ is an estimate of the conditional
+  probability distribution over words given the sequence of previous
+  $n-1$ words.  This estimate is based on word frequencies
+  in Leo Tolstoy's <i>War and Peace</i> and William
+  Shakespeare's <i>Romeo and Juliet</i>.
+</p>
+<p id="fn-5"> [5]
+  Solutions that use UCS ought to exhibit fairly fast execution time
+  for this problem, so using A* here is unnecessary.
+</p>
+<p id="fn-6"> [6]
+  This mapping was also obtained by reading Tolstoy and Shakespeare
+  and removing vowels.
+</p>
+
+
+</body><grammarly-desktop-integration data-grammarly-shadow-root="true"></grammarly-desktop-integration></html>Ytext/htmlUUTF-8¢’_WebResourceResponse_Qhttps://stanford-cs221.github.io/spring2022/assignments/reconstruct/grader-all.jsO´var allResult = {"mode": "all", "tests": [{"number": "1a", "name": "example to justify the greedy algorithm is suboptimal in word segmentation", "description": "example to justify the greedy algorithm is suboptimal in word segmentation", "max_seconds": null, "max_points": 2, "extra_credit": false, "basic": false}, {"number": "1b-1-basic", "name": "simple test case using hand-picked unigram costs", "description": "simple test case using hand-picked unigram costs", "max_seconds": 2, "max_points": 1, "extra_credit": false, "basic": true}, {"number": "1b-2-basic", "name": "simple test case using unigram cost from the corpus", "description": "simple test case using unigram cost from the corpus", "max_seconds": 2, "max_points": 1, "extra_credit": false, "basic": true}, {"number": "1b-3-hidden", "name": "simple hidden test case", "description": "simple hidden test case", "max_seconds": 3, "max_points": 3, "extra_credit": false, "basic": false}, {"number": "1b-4-hidden", "name": "hidden test case for all queries in QUERIES_SEG", "description": "hidden test case for all queries in QUERIES_SEG", "max_seconds": 3, "max_points": 5, "extra_credit": false, "basic": false}, {"number": "2a", "name": "example to justify the greedy algorithm is suboptimal in vowel insertion", "description": "example to justify the greedy algorithm is suboptimal in vowel insertion", "max_seconds": null, "max_points": 2, "extra_credit": false, "basic": false}, {"number": "2b-1-basic", "name": "simple test case", "description": "simple test case", "max_seconds": 2, "max_points": 1, "extra_credit": false, "basic": true}, {"number": "2b-2-hidden", "name": "simple hidden test case", "description": "simple hidden test case", "max_seconds": 2, "max_points": 3, "extra_credit": false, "basic": false}, {"number": "2b-3-hidden", "name": "simple hidden test case", "description": "simple hidden test case", "max_seconds": 3, "max_points": 3, "extra_credit": false, "basic": false}, {"number": "2b-4-hidden", "name": "hidden test case for all queries in QUERIES_INS", "description": "hidden test case for all queries in QUERIES_INS", "max_seconds": 3, "max_points": 3, "extra_credit": false, "basic": false}, {"number": "3a", "name": "formalize the search problem", "description": "formalize the search problem", "max_seconds": null, "max_points": 4, "extra_credit": false, "basic": false}, {"number": "3b-1-basic", "name": "simple test case with hand-picked bigram costs and possible fills", "description": "simple test case with hand-picked bigram costs and possible fills", "max_seconds": 2, "max_points": 1, "extra_credit": false, "basic": true}, {"number": "3b-2-basic", "name": "simple test case with unigram costs as bigram costs", "description": "simple test case with unigram costs as bigram costs", "max_seconds": 2, "max_points": 1, "extra_credit": false, "basic": true}, {"number": "3b-3-hidden", "name": "hidden test case with unigram costs as bigram costs and additional possible fills", "description": "hidden test case with unigram costs as bigram costs and additional possible fills", "max_seconds": 3, "max_points": 5, "extra_credit": false, "basic": false}, {"number": "3b-4-hidden", "name": "hidden test case with hand-picked bigram costs and possible fills", "description": "hidden test case with hand-picked bigram costs and possible fills", "max_seconds": 3, "max_points": 5, "extra_credit": false, "basic": false}, {"number": "3b-5-hidden", "name": "hidden test case for all queries in QUERIES_BOTH with bigram costs and possible fills from the corpus", "description": "hidden test case for all queries in QUERIES_BOTH with bigram costs and possible fills from the corpus", "max_seconds": 3, "max_points": 6, "extra_credit": false, "basic": false}, {"number": "4a", "name": "example analysis", "description": "example analysis", "max_seconds": null, "max_points": 2, "extra_credit": false, "basic": false}, {"number": "4b", "name": "transparency statement", "description": "transparency statement", "max_seconds": null, "max_points": 2, "extra_credit": false, "basic": false}, {"number": "4c", "name": "improved algorithm", "description": "improved algorithm", "max_seconds": null, "max_points": 2, "extra_credit": false, "basic": false}], "leaderboard": []};
+_application/javascriptUutf-8Obplist00‘
+X$versionY$archiverT$topX$objects Ü†_NSKeyedArchiver—	_WebResourceResponseÄØ:'-.4567mnopqrstuvwxyz{|}~ÄÅÇÉÑÖÜáàâäãåçéèêëíìîïñóòôöõü†U$null› !"#$%&___nsurlrequest_proto_prop_obj_6___nsurlrequest_proto_prop_obj_3R$2___nsurlrequest_proto_prop_obj_0R$3___nsurlrequest_proto_prop_obj_4V$class___nsurlrequest_proto_prop_obj_1R$4R$0___nsurlrequest_proto_prop_obj_5___nsurlrequest_proto_prop_obj_2R$1Ä8ÄÄ	ÄÄ9ÄÄ Ä”()$+,WNS.base[NS.relativeÄ ÄÄ_Qhttps://stanford-cs221.github.io/spring2022/assignments/reconstruct/grader-all.js“/012Z$classnameX$classesUNSURL¢13XNSObject#Aƒ¢{ØVb˛ »”89:SlWNS.keysZNS.objectsØ;<=>?@ABCDEFGHIJKLMNOPQRÄ	Ä
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ ØTUVWXYZ[\]^_`abcdedgTijkÄ!Ä"Ä#Ä$Ä%Ä&Ä'Ä(Ä)Ä*Ä+Ä,Ä-Ä.Ä/Ä0Ä1Ä2Ä1Ä3Ä!Ä4Ä5Ä6Ä7]x-proxy-cache_Content-EncodingVServer]Cache-Control_Strict-Transport-Security]Accept-Ranges_permissions-policy_x-fastly-request-idWx-timer_Access-Control-Allow-Origin_x-github-request-id[x-served-by^Content-LengthSViaTVaryTDate\x-cache-hitsWExpiresSAgeX__hhaa__Wx-cache\Content-TypeTEtag]Last-ModifiedTMISSTgzipZGitHub.com[max-age=600_max-age=31556952Ubytes_interest-cohort=()_(d3e7b030d412339bfe64850262f598381e3195c9_S1670692812.518398,VS0,VE268Q*_ ED2C:034A:34E3C4:3BE303:6394BFCB_cache-hkg17925-HKGS634[1.1 varnish_Accept-Encoding_Sat, 10 Dec 2022 17:20:11 GMTQ0_Sat, 10 Dec 2022 17:30:11 GMT_ 
+
+YnBsaXN0MDDfEBcBAgMEBQYHCAkKCwwNDg8QERITFBUWFxgaHB4gIiQmKCosLjAyNDY4Ojw9PkBCXXgtcHJveHktY2FjaGVfEBBDb250ZW50LUVuY29kaW5nVlNlcnZlcl1DYWNoZS1Db250cm9sXxAZU3RyaWN0LVRyYW5zcG9ydC1TZWN1cml0eV1BY2NlcHQtUmFuZ2VzXxAScGVybWlzc2lvbnMtcG9saWN5XxATeC1mYXN0bHktcmVxdWVzdC1pZFd4LXRpbWVyXxAbQWNjZXNzLUNvbnRyb2wtQWxsb3ctT3JpZ2luXxATeC1naXRodWItcmVxdWVzdC1pZFt4LXNlcnZlZC1ieV5Db250ZW50LUxlbmd0aFNWaWFUVmFyeVREYXRlXHgtY2FjaGUtaGl0c1dFeHBpcmVzU0FnZVd4LWNhY2hlXENvbnRlbnQtVHlwZVRFdGFnXUxhc3QtTW9kaWZpZWShGVRNSVNToRtUZ3ppcKEdWkdpdEh1Yi5jb22hH1ttYXgtYWdlPTYwMKEhXxAQbWF4LWFnZT0zMTU1Njk1MqEjVWJ5dGVzoSVfEBJpbnRlcmVzdC1jb2hvcnQ9KCmhJ18QKGQzZTdiMDMwZDQxMjMzOWJmZTY0ODUwMjYyZjU5ODM4MWUzMTk1YzmhKV8QHFMxNjcwNjkyODEyLjUxODM5OCxWUzAsVkUyNjihK1EqoS1fECBFRDJDOjAzNEE6MzRFM0M0OjNCRTMwMzo2Mzk0QkZDQqEvXxASY2FjaGUtaGtnMTc5MjUtSEtHoTFTNjM0oTNbMS4xIHZhcm5pc2ihNV8QD0FjY2VwdC1FbmNvZGluZ6E3XxAdU2F0LCAxMCBEZWMgMjAyMiAxNzoyMDoxMSBHTVShOVEwoTtfEB1TYXQsIDEwIERlYyAyMDIyIDE3OjMwOjExIEdNVKE5oRmhP18QJWFwcGxpY2F0aW9uL2phdmFzY3JpcHQ7IGNoYXJzZXQ9dXRmLTihQV8QEVcvIjYyYzBjODdiLTEwYWIioUNfEB1TYXQsIDAyIEp1bCAyMDIyIDIyOjM2OjQzIEdNVAAIADkARwBaAGEAbwCLAJkArgDEAMwA6gEAAQwBGwEfASQBKQE2AT4BQgFKAVcBXAFqAWwBcQFzAXgBegGFAYcBkwGVAagBqgGwAbIBxwHJAfQB9gIVAhcCGQIbAj4CQAJVAlcCWwJdAmkCawJ9An8CnwKhAqMCpQLFAscCyQLLAvMC9QMJAwsAAAAAAAACAQAAAAAAAABEAAAAAAAAAAAAAAAAAAADKw==_%application/javascript; charset=utf-8_W/"62c0c87b-10ab"_Sat, 02 Jul 2022 22:36:43 GMT“/0úù_NSMutableDictionary£úû3\NSDictionary_application/javascript“/0°¢_NSHTTPURLResponse££§3_NSHTTPURLResponse]NSURLResponse    $ ) 2 7 I L b d ° ß ¬ ‰	+.PWy|°√∆» ÃŒ–“‘÷◊Ÿ€›ﬂÊÓ˙¸˛ TYdmsvàäåìõ¶¡√≈«…ÀÕœ—”’◊Ÿ€›ﬂ·„ÂÁÈÎÌÔÒ "$&(*,.02468:<>L_ftêû≥…—Ô $).;CGPXejx}Ççô¨≤«Ú6KO[mçèØ
+”
+˚/4JN[tyçë•             •              ≥‘_Phttps://stanford-cs221.github.io/spring2022/assignments/reconstruct/holykeys.pngO∑âPNG
+
+   IHDR  -   Z   Ì≥ #   bKGD ˇ ˇ ˇ†Ωßì   	pHYs     öú  WIDATx⁄ÌùyTTG˛∑üfÖDhƒGFÉ4q∫]0®ÏQõ$FC¿∏†‚FÃ†Ê¿å—dT4„A%j¢QB*®¡˝∞å∏ÖC;It8ÍDTFdQ‹P°È˜è¸ËWíìH]DÎ9ß‹jËœ≠™[üÆ™{ªæ™yÛÊΩΩΩQí‘‘Túùùi"]3ooo£¬∫*ggÁ∫ß¨ûü¶ˆ}öÍŸ+55uõ≥≥s•À{˙ÙiÆ\πbf@Sà˜ÏŸ≥©tçOYy•Æ‘mLé6ey0˚•?™´´C"ë4OT*’YÆüòVUUSßN≈¡¡sss⁄¥i√€oøÕç7ÑúÄNß√◊◊◊t¸—G°’jY±bÖ)/  Ä°Cá
+—ü8q"*ïÍ')11QX•ﬂºy≠V€ y{{EEEÖ–˜ÒÒ˘â∂V´≈««Gòfqq1}˙Ùa¿Ä‹æ}€î?bƒz˜ÓÕˇ˚_a⁄ù;w˛…à¿€€+++E:ÿ÷≠[—jµl›∫UΩ¸¸|"""∞≥≥¿¡¡Åi”¶	7∞êêê◊ìüüKñ,°∂∂V¨i’‘‘ƒö5kÙÙ$**
+www<x∞êptt$77ó¬¬B ˆÏŸÉ^Ø'33Ä≥gœíïïE€∂mÖTvQQ ˛Ûü$µZ-¨ÅzΩûíí\]]quuÂ∆ç$$$Œ;ÔΩ∏ÏÏÏ∞∑∑ÁÓ›ªËızn›∫ÖΩΩΩÈ"Å≥≥3/ºábıÍ’ ‰ÊÊíûûNßNùpqq¶}Ì⁄5Æ_øﬁ Ô˙ıÎ‘‘‘(b"eeeËız   YEFFÚ…'ü–´W/fŒúâßß'´WØ∆ÀÀK®qù:u
+Ω^è´´+...MBBB£kY‹êööJ~~>aaal⁄¥	ïJÖ—h$44îÕõ7≥uÎVBBB}§ıÈßür‡A∫uÎFAA...Ëız <¿ê!CÑ6xZZö‚√‹?˝ÈO&›öö⁄µk«±c«Ñjnﬂæ›‘÷aaaÃò1É©Sß
+/Î˚ÔøOZZKó.e⁄¥iƒ««cff∆Ç‰<Æëÿ∏q#c∆åaÙË—§§§êììÉJ•2ß§§?á˙Îπ≤≤GGGˆÔﬂœÏŸ≥≈ç¥≤≥≥ò>}∫…ïU*oø˝6 YYYç^HÃÕÕ9x ≈≈≈îññ2q‚D*++9{ˆ,ˇ¸Á?177'00Phe«««7HJ¨‘‘‘pıÍUÆ^Ω Ò„«πyÛ&]∫ty";T˚ˆÌâçç•¥¥î3f∞oﬂ>¬¬¬ÙÙîn”H‰‰‰ êííÇ—¯√T£—»¥i”ÑıﬂqÎ÷-ÍÍÍ077;“™_O˘√˛–‡èÍèÀÀÀ˝‘j5^^^‰ÂÂQPPÄôô&L 66Ω^O^^^^^Bßk 111éœü?/ºa˜Ôﬂﬂ†\B◊“öö»»H>˛¯cííí∞¥¥d˛¸˘“ië+WÆ ¸dç∞ˇ˛^âV´≈`0pÊÃ ^{Ì5±kZ \ºx±¡îÒ˚ÔøˇY3k,ÜJqq1[∂l¡››ùvÌ⁄—Ω{w2228wÓ/ø¸≤ 6çí≥≥≥pÕn›∫±xÒb-ZÑØØ/ÏŸ≥ÁâÌT-Z¥‡˝˜ﬂ 44TËZ÷˝Î<˜Ó›kê'bmˆq†~›˜ˇ˚ﬂGª¢±∑∑ßMõ6ÚÒ«!÷¥ÍÔ‚≠Y≥£—»È”ß	Á’W_ ((HHAÎMi€∂mÙÓ› çFc∫„"ÍŒaS”•K¢££âââaÂ ï >|¯âtÏÿÄ:(¢◊©S'Œü?œÂÀó∏tÈÁœüßGèO\›˙˘˘êòòÿ`ygÙË—˙∑H8¿ÅHOO'""333±¶ÜV´e„∆ç¯˚˚ìúúåããUUUÿ€€+tØ^Ωprr¢¶¶çFc2≠⁄⁄Z⁄∑oOØ^Ω÷ﬁü&Nú®ËW˜Æ™™JŒsë1c∆pÁŒººº3=v1vÏÿ'Æ¨oΩı}˙Ù!55ïÅ¢R©8p )))xyyôÃ´π”¿¥,--Ÿø?ì&M‚¯Ò„ƒ««sÂ ¬√√1¬÷[T*„«èG£—òû©ÒˆˆF£—0~¸x°ã‚ÓÓÓ&£T
+sss4nnn¶<GGG˙ıÎG]]ù"”µZçF£¡——Q—≤€⁄⁄¢—hL#.—º˚Óª¨X±µZMVVˆˆˆ¨\π≤—Ôh=GGG≈ÍŸh4íüüœî)S»œœ~xnk˙ÙÈ=z‘¥8/ÇÁü^©~d¥¯π9È⁄µkYªv-wÔﬁ•Eã Ãû=õÁû{Nÿô|¡|¡F_¬k ))IÒO
+[[€üîÕ  ä£Gè*vÉf‡¡äó˝≈_T§]ÔÔ»ÄÈx=ëëëäËè9íë#G*^ﬁ’´W£R©®ÆÆ6ME≤yÛf≈ hÒK/÷@˜Ó›Â\C"iFàY=6”CâD"ë¶%ëH$“¥$â4-âD"y¸QI”íH$r§%ëH$“¥$âDöñD"ë¶%ëH$“¥ï¨gŸæíÊ€æ≤3…é$ëH”íH”í<—ÿJ”íH$ÕâgöR\öñD"iV<ç¶e’öjy©)Ü√STVÀˇKO™∑ﬁz´‰Aaú*++Q´’ÂÄ·4ÃÅ6˜gdgg”∂m[~A∑≠Z≠nÙÿCˇßõ˚êÚ"@◊Á!Â•ÀS®˚•ßßgı}Ÿ◊Å=Çu›⁄∂mku_ymÅËï˜K†Z·z™V´müîˆµµµÂÿ±cñ™îîîÓªlŸ≤ä¯¯¯G›IÃÏ7éË¸£££?éèèÁGDGG◊ƒ««[J]©+uY◊±o∏—bÙË—å◊≠”ÈxT√o©Ìurr∫”∫ø''ßÍÄÄ K©+u•Ó#Î÷àzˇf∑¶U[[K]]ù\πå—h|b„Jö7øÀ¥æ˚Ó;S®-%"1√1=<<∞∂∂¶U´V¯˙˙ÚÔˇ[®Ê{ÔΩ◊ ¨ÿ†AÉàããS$Ã◊èCö’'—|˝ı◊`iiI´V≠‡”O?™πxÒb¥Z-_˝uÉÛ–jµ,^ºX—°V´Ö«Ÿ		¡«««t|Ò‚E»¿Å9wÓúÎJÈxçç≈Ô˘ßœ>˚å„«èc4IIIaŒú9BOÚ?ˇ˘°°°∏∫∫≤lŸ2JKKIHH‡ïW^·Ãô3BB¬·≈ız=>>>XXXpÓ‹9Êœüœó_~…ë#G˛hlÙz=m⁄¥Q$¿f=EEE¯¯¯pÛÊMBCCqrr"==ùq„∆a0¢[\\å^ØÁÊÕõ¶ºõ7o¢◊ÎÈ”ßè¢‚Í’´‹∏qC®∆©Sß(..†¥¥___JJJÿ±cÆÆÆBµız=-[∂l˛¶µyÛfBBB~’?®T*\]]—jµ‹πsá‘‘T·¶ıÕ7ﬂpÔﬁ="##ô>}: ù;wÊ¿Åîóóõ¬Åãb˚ˆÌ¥n›É¡@hh(iiiddd¸Í:˚ΩtÎ÷ç¥¥4≈.Ü˘ÛÁSUUERR&L  &&ooo∂lŸ"Ã¥ûV***‰‚≈ãÏÿ±É¶X«Uö’´W0uÍTÂFZGé°ˇ˛DDDpÁŒ‚‚‚–ÎıB5vÔﬁïJ≈¨Y≥8r‰Cáeÿ∞aLö4I—
+777g“§I§••ÒÕ7ﬂ7≠ÚÚr∂lŸb:Ó—£›∫u¶óììÉµµ5„∆ç3ÂŸŸŸqÚ‰IEÍwÈ“•l⁄¥	¿∆˛I•¶¶ùN«â'¯¸Ûœ	
+
+z*å∫~∫ˇ»¶Â‚‚¬K/ΩƒıÎ◊9q‚ƒCßÜ √áß¶¶Ü∏∏8RRRÑöñááIII,[∂å‘‘TRSS133#$$ÑıÎ◊ce•‹Û¢Ì⁄µ‡“•K¬µ
+5jîÈx—¢Eƒƒƒ”+++£c«éòõˇà\ll¨©ΩŒû=+¥º;wÓ|jFY∑oﬂFØ◊êññ&¸qa’™Uè¸f ˚€ﬂ∏rÂ Cßy*ïä/æ¯µZMNNá‚ŸgüeÛÊÕBC◊ÑáásÚ‰I
+Y∞`:t 55ïîîE+Ω§§ Ò^kµZŒû=kJS¶L™◊∂m[JKK©©©1MO0ç¬àÚÚÚ0ççFÚÚÚiœ5k÷ß¸∫åÖ˚ˆÌ„’W_%##£Q:ss@ß”°”È›¥≤≤≤=zÙC›>33ìÚÚr*++ô<y2ì'OÊ˙ıÎ\æ|ô={ˆ+Ëgü}Fó.]ÿ≤eÓÓÓÃù;◊47ævÌöb~˜Ó]Sxq·z÷÷÷∏∫∫öíùùùPΩÄÄ ÓﬁΩÀG}@hh(ˇ˚ﬂπuÎ÷€â“””Y≤d	F£—tWÿ⁄⁄Z∏Æçç~~~¨[∑é:0{ˆÏáŒr$˜MßNù ¬ÖŸ∂m#Fåx‡ß¶¶pÙËQ”‚wii)˝˚˜'%%Ö¡É9…˛˝˚s˘Úe&OûÃ·√áQ´’lﬁº¸¸¸ÑW“∞a√®´´£∞∞ê+WÆ»üè#±±±Ï‹πìô3gíõõã≥≥3;vÏP‰è¶‚Ö^‡¿ÅôÓBã\7¸1m⁄¥a√Ü<ò7ﬁxÉÇÇZµj%T≥˛qí˚)((P§º={ˆ‡€oø}4”4h•••DDDêóó«Ä~vj8p‡@ÜJø~˝L˘ÆÆÆËt:.\∏ÄJ•¬h46zA]\\ÿµk111¨Y≥Ü∫∫:∫wÔNZZ/æ¯¢∞
+vqqA£—p„∆,,,Ë€∑/DDDük4‹››Ì¿nnn‰ÂÂ1sÊLvÌ⁄Ö—hDß”1a¬,X L◊ŸŸçFÉ≠Ìˇˇöú≠≠-çgg±ﬂÊäççÂÓ›ªÏ›ª£—»ÿ±cô?æPÕÁüæ¡wÛÇÇÇàçç%33ì‰‰d"##Ö^WMâËˆDß”ô÷îL¡¡¡E∆`0å555FWõÄ«Q∑ÆÆŒX[[+ÎYÍ˛^]a˛`A3√ÃÃLÿ√§íÜ#Î˙ªà…cÂ≤
+$â4-âD"ë¶%ëH$“¥$â4-âD"ë¶%ëH$“¥$â≤¨^Ω⁄ÙºﬂãÖ¨FâD¢ç∂5çD"ë(AcÏf!MK"ë(Fcl4 ◊¥$I≥BöñD"Qåû={ö∂ßë¶%ëH{úùùD]í¶%ëHkË⁄µÎiZrOâ‰	dŸ≤e¨\πÚëﬁ√‚ó¢ªl€∂ç%Kñ¸û˜UUVVQ´’û¿oç 1±®®Ëôﬂ©KeeeÉ]!EEE-•Æ‘ï∫ç¢k‹˚Òkù;wf˚ˆÌè§´Õ∆rŸ≤e;„„„≈lˇDGG◊ƒ««[J]©˚È DE9F◊<>>˛QˆØ˝π˜˝Â%>>˛óGZ£GèQµ:ùÓ^SDÃurr™∞î∫R˜	“˝™	tkõ®ˇ>4“∂\àWà˙XÇâ‰˜QLF1”⁄ªw/Z≠ˆg”÷≠[ÖÈ&$$†’jY∑nù)/))	≠VÀÚÂÀÖñπ††Ä¿¿@,--±∂∂¶Kó.¬5cbb–jµ=z‘îóüüèV´ù:11±AõˆÓ›õë#Gr¯a°Â≠◊MHH0Âù9s≠VkäQ)ÚZŒ»»0Âo€∂ÕîøwÔ^È2çƒï+W1b-[∂ƒ∆∆F9”≤≤≤¬ﬁﬁæA˙ÓªÔ–ÎıBÉÅé;ñKó.MEEº˚Óªîîî0fÃa∫ßNùb–†AdggÃÙÈ”1ç¸Â/M∏gœûËı˙!Êø¸ÚKÙz=ûûû¬t/]∫Ñ^Ø«¡¡WWWZ∂l…Œù;y˘Âó©¨¨Æ;gŒäãã®ÆÆFØ◊sÈ“%!öïïïËızÙz}”⁄æ}ª)_dô6inÔ˝0fÕöEzz:···ÑÖÖ)gZ~~~8p¿î∆çGuu5AAAZW¿ﬁﬁûƒƒD***ò;w.sÁŒÂ⁄µk¨\π{{{a∫Kó.ÂˆÌ€$&&íëë¡ä+¯Í´Ø∞±±a˝˙ı¬t_yÂZµj≈Æ]ªLyªwÔ∆⁄⁄ö◊^{Mx;¯·á§••q‡A∆éÀ≠[∑∏p·Çp›ÍÍjfœû≠hgrss#;;€túùùç´´´‚FïúúLﬂæ}Y¥hë0ùEã—∑o_íìì7∞ÔøˇùNGbb"k◊Æmö/L>|òp<==IKK™jƒà6åµk◊0|¯_å§›Xe¥¥¥d“§I¶<GGGJJJ®´´¶˚Ã3œ†”Èÿ∫u+%%% ¸Î_ˇ‚ı◊_Áôgûﬁ∂………¥oﬂû≤≤2vÏÿA◊Æ]ÒÆ;~¸xíìì………°Mõ6ä\«æææ|Ú…'PRR¬Ñ	8wÓúpÌ¢¢"÷¨YÉΩΩ=qqqLö4âÒ„«≠ﬂ⁄⁄Z‚‚‚∞∑∑'**ä)S¶(P8//œÙ{ff¶ÚÒgŒú·ı◊_ßuÎ÷§ßß”∫ukEt###1ÜG⁄ÀÁ◊rÌ⁄5±∞h¯πÏ≥œbgg'T˚Õ7ﬂƒh4≤gœvÔﬁç—h‰ç7ﬁP§ûàââ·ˇ¯eeetÌ⁄ï{˜Ó)“æûûûÃò1É⁄⁄ZE ⁄Ø_?¨≠≠…  "''á-Z‡ÂÂ%T≥†† <<<(,,d˝˙ı\∏pÅπsÁ“Æ];a∫Ì⁄µ„Ω˜ﬁ„¬Ölÿ∞Å¬¬B<<<˜˜ß††@ë˙ﬁΩ{7√áWv§UUU≈·√©™™"77777EtçF#ÛÊÕ3yù7o˛˛˛Báπù:u‚ƒâ‹ªw+++S˛≈ã1¸Òè¶=d»û}ˆYˆÌ€á¡`¿∆∆Ü‡‡`EÍ˙€oø•Gè‹Ω{óËËhñ/_ŒÜò6möP]V¨XÅüüüõıX[[„ÂÂEvv6fffÙÌ€óñ-[
+’<vÏŸŸŸ8ê9sÊ‡ÌÌç—hT¨◊k988P]]Mvv6«éC´’
+◊^æ|9vvv ç¥£Fç‚‰…ì$''ˇD∫üuÎ÷ô¶§···9rÑ§§$°öΩzı¢¶¶¶¡÷≤.\¿ÕÕç∞∞0·ùiÿ∞aÏﬂøü¨¨,”:óí¥h—ÇÁû{Œ4ÍTj∫ˆÊõo≤q„F≈ ÈÁÁGNNπππ¯¯¯(2¢Ãœœ«ÕÕç†† zÙË¡™U´YgR©T¨Zµä=zHó.]»œœ'22Rë∫éââ!55U9”JIIaˇ˛˝ÿÿÿ∞a√MÈ´Øƒ=;W^^NLLvvv,\∏êÖbgg«_ˇ˙W   ÑÈŒö5ãV≠ZEpp0&L@´’rÔﬁ=¢¢¢Ñ◊wHHUUUTUU1j‘(≈:qDDÅÅÅºÙ“KDEEaee•ÿ(~∏bcc£òûèèWØ^•ºº___E4{˜ÓÕ∫uÎ8yÚ$···,_æ[[[“““Ñi¶••akkÀÚÂÀ	Á‰…ì¨[∑éﬁΩ{+V◊ÔºÛ3gŒTŒ¥lll–h4∏ªªsıÍ’I‰Éó7n§sÁŒ,]∫GGGY∫t)ù;wf”¶M¬tªwÔNnn.`ÔﬁΩ§§§‡‰‰ƒÁü.¸& @@@ ¿ÀÀã!CÜ◊Îÿ±#çÜööÆ^Ωä¡``ÿ∞adgg?Ú˛IøF∑~Z÷±cG-ZÑF£°c«éB4’j5çµZMü>}Ë◊ØüÈÁ˝Øâ∆’’ï®®(Nü>MFFÜPMµZMFFßOü&**JÒª§√∂6ŒŒŒ‚Fí:ùná±	Æz‹tÎÍÍåµµµOMy•n£Î¢t
+Êq’ï_„Q ïJ%¸±â‰iAöñD"ë¶%ëH$“¥$âDöñD"ë¶%ëH$Ç())ë¶%ëHöªwÔjZ-dK$í∆d◊Æ]BMÀKV±D"i,T*ÂÂÂrz(ëHöŸŸŸx{{K”íH$Õgj$MK"ë4:Ñüüü4-â§π“≥gO°;h<N∫gœû≈ŸŸY~aZ"iŒ8;;çdıK∫"∑ày–‘Pß”Ú·Râ§ŸÚ·á*∂e˘˝dffíôô©®Ê·√áM˚¬Y»¶óHö'+V¨êˆq„ã/æ0˝nEãç˛®Ì∂m€Z.Y≤‰g_¨ÆÆ†®®ËÅ∫è¬√ŒYînSïWÍ>V∫ı¿7à`—πsÁ¡b˘z¶â À√|„ˇﬁﬂ{ªÙ◊J    IENDÆB`ÇYimage/pngOabplist00‘
+X$versionY$archiverT$topX$objects Ü†_NSKeyedArchiver—	_WebResourceResponseÄØ7'-.4567klmnopqrstuvwxyz{|}~ÄÅÇÉÑÖÜáàâäãåçéèêëíìîïñóõU$null› !"#$%&___nsurlrequest_proto_prop_obj_6___nsurlrequest_proto_prop_obj_3R$2___nsurlrequest_proto_prop_obj_0R$3___nsurlrequest_proto_prop_obj_4V$class___nsurlrequest_proto_prop_obj_1R$4R$0___nsurlrequest_proto_prop_obj_5___nsurlrequest_proto_prop_obj_2R$1Ä2ÄÄ	ÄÄ6ÄÄ Ä”()$+,WNS.base[NS.relativeÄ ÄÄ_Phttps://stanford-cs221.github.io/spring2022/assignments/reconstruct/holykeys.png“/012Z$classnameX$classesUNSURL¢13XNSObject#Aƒ¢{ØVn¸ »”89:RjWNS.keysZNS.objectsØ;<=>?@ABCDEFGHIJKLMNOPQÄ	Ä
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄØSTUVWXYZ[\]^_`abcbeShiÄ Ä!Ä"Ä#Ä$Ä%Ä&Ä'Ä(Ä)Ä*Ä+Ä,Ä-Ä.Ä/Ä0Ä/Ä1Ä Ä2Ä3Ä4Ä5]x-proxy-cacheVServer]Cache-Control_Strict-Transport-Security]Accept-Ranges_permissions-policy_x-fastly-request-idWx-timer_Access-Control-Allow-Origin_x-github-request-id[x-served-by^Content-LengthSViaTVaryTDate\x-cache-hitsWExpiresSAgeX__hhaa__Wx-cache\Content-TypeTEtag]Last-ModifiedTMISSZGitHub.com[max-age=600_max-age=31556952Ubytes_interest-cohort=()_(dafa415188d32654622d6ddd2caea8a59c0bd6de_S1670692812.814484,VS0,VE267Q*_ ED2C:034A:34E3C5:3BE307:6394BFCB_cache-hkg17925-HKGT6327[1.1 varnish_Accept-Encoding_Sat, 10 Dec 2022 17:20:12 GMTQ0_Sat, 10 Dec 2022 17:30:11 GMT_»
+
+YnBsaXN0MDDfEBYBAgMEBQYHCAkKCwwNDg8QERITFBUWFxkbHR8hIyUnKSstLzEzNTc5Ojs9P114LXByb3h5LWNhY2hlVlNlcnZlcl1DYWNoZS1Db250cm9sXxAZU3RyaWN0LVRyYW5zcG9ydC1TZWN1cml0eV1BY2NlcHQtUmFuZ2VzXxAScGVybWlzc2lvbnMtcG9saWN5XxATeC1mYXN0bHktcmVxdWVzdC1pZFd4LXRpbWVyXxAbQWNjZXNzLUNvbnRyb2wtQWxsb3ctT3JpZ2luXxATeC1naXRodWItcmVxdWVzdC1pZFt4LXNlcnZlZC1ieV5Db250ZW50LUxlbmd0aFNWaWFUVmFyeVREYXRlXHgtY2FjaGUtaGl0c1dFeHBpcmVzU0FnZVd4LWNhY2hlXENvbnRlbnQtVHlwZVRFdGFnXUxhc3QtTW9kaWZpZWShGFRNSVNToRpaR2l0SHViLmNvbaEcW21heC1hZ2U9NjAwoR5fEBBtYXgtYWdlPTMxNTU2OTUyoSBVYnl0ZXOhIl8QEmludGVyZXN0LWNvaG9ydD0oKaEkXxAoZGFmYTQxNTE4OGQzMjY1NDYyMmQ2ZGRkMmNhZWE4YTU5YzBiZDZkZaEmXxAcUzE2NzA2OTI4MTIuODE0NDg0LFZTMCxWRTI2N6EoUSqhKl8QIEVEMkM6MDM0QTozNEUzQzU6M0JFMzA3OjYzOTRCRkNCoSxfEBJjYWNoZS1oa2cxNzkyNS1IS0ehLlQ2MzI3oTBbMS4xIHZhcm5pc2ihMl8QD0FjY2VwdC1FbmNvZGluZ6E0XxAdU2F0LCAxMCBEZWMgMjAyMiAxNzoyMDoxMiBHTVShNlEwoThfEB1TYXQsIDEwIERlYyAyMDIyIDE3OjMwOjExIEdNVKE2oRihPFlpbWFnZS9wbmehPl8QDyI2MmMwYzg3Yi0xOGI3IqFAXxAdU2F0LCAwMiBKdWwgMjAyMiAyMjozNjo0MyBHTVQACAA3AEUATABaAHYAhACZAK8AtwDVAOsA9wEGAQoBDwEUASEBKQEtATUBQgFHAVUBVwFcAV4BaQFrAXcBeQGMAY4BlAGWAasBrQHYAdoB+QH7Af0B/wIiAiQCOQI7AkACQgJOAlACYgJkAoQChgKIAooCqgKsAq4CsAK6ArwCzgLQAAAAAAAAAgEAAAAAAAAAQQAAAAAAAAAAAAAAAAAAAvA=Yimage/png_"62c0c87b-18b7"_Sat, 02 Jul 2022 22:36:43 GMT“/0òô_NSMutableDictionary£òö3\NSDictionary“/0úù_NSHTTPURLResponse£ûü3_NSHTTPURLResponse]NSURLResponse    $ ) 2 7 I L b d û § ø ·(+MTvy|û¿√≈«…ÀÕœ—”‘÷ÿ⁄‹„Î˜˘˚˝PU`ior{ÑÜàèó¢ºæ¿¬ƒ∆» ÃŒ–“‘÷ÿ⁄‹ﬁ‡‚‰ÊËÍ
+ "$&(*,.024BIWsÅñ¨¥“ËÙ&*3;HM[`kwäê•–ÔÒ).:Llné
+Z
+d
+v
+ñ
+õ
+±
+µ
+¬
+«
+€
+ﬂ
+Û             †                  1 < K b t ä ® ˘ ˙NANKNQNTN_NuN…_x_ë_ól∏l¡mÖœÖŸ                           í>
