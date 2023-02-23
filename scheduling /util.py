@@ -279,7 +279,7 @@ class CourseBulletin:
 
 # A request to take one of a set of courses at some particular times.
 class Request:
-    def __init__(self, cids, quarters, prereqs, weight):
+    def __init__(self, cids:list, quarters:list, prereqs:list, weight:float):
         """
         Create a Request object.
 

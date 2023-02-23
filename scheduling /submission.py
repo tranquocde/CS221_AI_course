@@ -371,7 +371,7 @@ get_or_variable = util.get_or_variable
 # problem.
 class SchedulingCSPConstructor():
 
-    def __init__(self, bulletin, profile):
+    def __init__(self, bulletin:util.CourseBulletin, profile:util.Profile):
         """
         Saves the necessary data.
 
@@ -381,7 +381,7 @@ class SchedulingCSPConstructor():
         self.bulletin = bulletin
         self.profile = profile
 
-    def add_variables(self, csp):
+    def add_variables(self, csp:util.CSP):
         """
         Adding the variables into the CSP. Each variable, (request, quarter),
         can take on the value of one of the courses requested in request or None.
@@ -439,7 +439,7 @@ class SchedulingCSPConstructor():
         self.add_norepeating_constraints(csp)
         return csp
 
-    def add_quarter_constraints(self, csp):
+    def add_quarter_constraints(self, csp:util.CSP):
         """
         If the profile explicitly wants a request to be satisfied in some given
         quarters, e.g. Aut2013, then add constraints to not allow that request to
@@ -452,7 +452,14 @@ class SchedulingCSPConstructor():
         #Hint: If a request doesn't specify the quarter(s), do nothing.
         
         # BEGIN_YOUR_CODE (our solution is 5 lines of code, but don't worry if you deviate from this)
-        raise Exception("Not implemented yet")
+        # raise Exception("Not implemented yet")
+        for request in self.profile.requests:
+            assert isinstance(request,util.Request)
+            for quarter in self.profile.quarters:
+                if len(request.cids) > 0:
+                    csp.add_unary_factor((request,quarter) , lambda x: True if (x is None or len(\
+                        request.quarters) == 0 or quarter in request.quarters) else False)
+ 
         # END_YOUR_CODE
 
     def add_request_weights(self, csp):
