@@ -319,7 +319,7 @@ class BacktrackingSearch():
 ############################################################
 # Problem 2b
 
-def get_sum_variable(csp, name, variables, maxSum):
+def get_sum_variable(csp:util.CSP, name, variables, maxSum):
     """
     Given a list of |variables| each with non-negative integer domains,
     returns the name of a new variable with domain range(0, maxSum+1), such that
@@ -346,19 +346,18 @@ def get_sum_variable(csp, name, variables, maxSum):
         csp.add_variable(result,[0])
         return result
     oldVar=None
-    for i,var in enumerate(variables):
-        B_i=('sum',i)
-        #A_0 is special case. theres no prev amount to check for
-        if i==0:
+    for i, var in enumerate(variables):
+        B_i = ('sum',i)
+        if i == 0:
             csp.add_variable(B_i,[(0,i) for i in range(maxSum+1)])
-            csp.add_binary_factor(B_i,variables[0],lambda x,y:x[1]==y) # B_0[0] = 0
+            csp.add_binary_factor(B_i,variables[0],factor_func= lambda x,y: x[1]==y)
         else:
-            csp.add_variable(B_i,[(j,k) for j in range(maxSum+1) for k in range(maxSum+1)])
-            csp.add_binary_factor(B_i,oldVar,lambda x,y:x[0]==y[1]) #B_i[0] = B_i-1[1]
-            csp.add_binary_factor(B_i,variables[i],lambda x,y:x[1]==(x[0]+y))
-        oldVar=B_i
+            csp.add_variable(B_i,[(i,j) for i in range(maxSum+1) for j in range(maxSum+1)])
+            csp.add_binary_factor(B_i,variables[i],lambda x,y: x[1] == x[0] + y)
+            csp.add_binary_factor(B_i,oldVar,lambda x,y:x[0]==y[1])
+        oldVar = B_i
     csp.add_variable(result,range(maxSum+1))
-    csp.add_binary_factor(result,B_i,lambda x,y:x==y[1])
+    csp.add_binary_factor(result,oldVar,lambda x,y: x==y[1])
     return result
     # END_YOUR_CODE
 
