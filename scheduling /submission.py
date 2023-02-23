@@ -341,13 +341,13 @@ def get_sum_variable(csp:util.CSP, name, variables, maxSum):
     """
     # BEGIN_YOUR_CODE (our solution is 18 lines of code, but don't worry if you deviate from this)
     # raise Exception("Not implemented yet")
-    result='sum'
+    result='sum',name,'agreegated'
     if len(variables)==0:
         csp.add_variable(result,[0])
         return result
     oldVar=None
     for i, var in enumerate(variables):
-        B_i = ('sum',i)
+        B_i = ('sum',name,i)
         if i == 0:
             csp.add_variable(B_i,[(0,i) for i in range(maxSum+1)])
             csp.add_binary_factor(B_i,variables[0],factor_func= lambda x,y: x[1]==y)
@@ -511,7 +511,8 @@ class SchedulingCSPConstructor():
                         # in `quarter` (that's why we test `not val`)
                         csp.add_binary_factor(orVar, v, lambda o, val: not val or o)
 
-    def add_unit_constraints(self, csp):
+
+    def add_unit_constraints(self, csp:util.CSP):
         """
         Add constraint to the CSP to ensure that the total number of units are
         within profile.minUnits/maxUnits, inclusively. The allowed range for
@@ -538,7 +539,24 @@ class SchedulingCSPConstructor():
         #         be enforced by the constraints added by add_quarter_constraints
 
         # BEGIN_YOUR_CODE (our solution is 16 lines of code, but don't worry if you deviate from this)
-        raise Exception("Not implemented yet")
+        # raise Exception("Not implemented yet")
+        
+        for quarter in self.profile.quarters:
+            new_vars = []
+            for request in self.profile.requests:
+                for cid in request.cids:
+                    var = (cid, quarter) #name of the variable 
+                    minVal = self.bulletin.courses[cid].minUnits
+                    maxVal = self.bulletin.courses[cid].maxUnits
+                    csp.add_variable(var, list(range(minVal, maxVal + 1)) + [0])  #  0 if course not taken in that quarter
+                    new_vars.append(var)
+                    
+                    #(request,quarter) is the name of the variable request_cid in lambda function
+                    #var is the name of the variable course_id in lambda function
+                    csp.add_binary_factor((request, quarter), var, lambda request_cid, course_unit: course_unit > 0 if request_cid == cid else course_unit == 0)
+
+            quarter_sum = get_sum_variable(csp, quarter, new_vars, self.profile.maxUnits)
+            csp.add_unary_factor(quarter_sum, lambda x: self.profile.minUnits <= x <= self.profile.maxUnits)
         # END_YOUR_CODE
 
     def add_all_additional_constraints(self, csp):
