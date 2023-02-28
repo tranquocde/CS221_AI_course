@@ -191,24 +191,34 @@ def kmeans(examples: List[Dict[str, float]], K: int,
     distances=[0 for item in examples]
     pastmatches=None
     examples_squared=[]
+
+    #compute square of each data point
     for item in examples:
-        tempdict=collections.defaultdict(float)
+        tempdict=dict()
         for k,v in item.items():
             tempdict[k]=v*v
         examples_squared.append(tempdict)
+
     for run_range in range(maxEpochs):
+
+        #compute square of each centroid
         centroids_squared=[]
         for item in centroids:
-            tempdict = collections.defaultdict(float)
+            tempdict = dict()
             for k, v in item.items():
                 tempdict[k] = v * v
             centroids_squared.append(tempdict)
+    
         for index,item in enumerate(examples):
             min_distance=float('inf')
             for i,cluster in enumerate(centroids):
+
+                #(a-b)^2 = a^2+b^2 - 2ab
+                #use this formula to compute the real distance
                 distance=sum(examples_squared[index].values())+sum(centroids_squared[i].values())
                 for k in set(item.keys() & cluster.keys()):
                     distance+=-2*item[k]*cluster[k]
+                
                 if distance<min_distance:
                     min_distance=distance
                     bestmatch[index]=i
