@@ -2,7 +2,7 @@
 
 import random
 from typing import Callable, Dict, List, Tuple, TypeVar
-
+import collections
 from util import *
 
 FeatureVector = Dict[str, int]
@@ -26,7 +26,13 @@ def extractWordFeatures(x: str) -> FeatureVector:
     Example: "I am what I am" --> {'I': 2, 'am': 2, 'what': 1}
     """
     # BEGIN_YOUR_CODE (our solution is 4 lines of code, but don't worry if you deviate from this)
-    raise Exception("Not implemented yet")
+    # raise Exception("Not implemented yet")
+    ans = dict()
+    for word in x.split():
+        if word not in ans:
+            ans[word] = 1
+        else: ans[word]+= 1
+    return ans
     # END_YOUR_CODE
 
 
@@ -57,7 +63,19 @@ def learnPredictor(trainExamples: List[Tuple[T, int]],
     weights = {}  # feature => weight
 
     # BEGIN_YOUR_CODE (our solution is 13 lines of code, but don't worry if you deviate from this)
-    raise Exception("Not implemented yet")
+    # raise Exception("Not implemented yet")
+    def prediction(x):
+        theta_x = featureExtractor(x)
+        if dotProduct(weights,theta_x) <0:return -1
+        else: return 1
+    for i in range(numEpochs):
+        for (x,y) in trainExamples:
+            theta_x = extractWordFeatures(x)
+            margin = dotProduct(weights,theta_x)*y 
+            if margin < 1:
+                increment(weights,eta*y,theta_x)
+        print(f'Epochs {i} Train set: {evaluatePredictor(trainExamples,prediction)} , Test set:\
+              {evaluatePredictor(validationExamples,prediction)}')
     # END_YOUR_CODE
     return weights
 
@@ -82,7 +100,11 @@ def generateDataset(numExamples: int, weights: WeightVector) -> List[Example]:
     # Note that the weight vector can be arbitrary during testing.
     def generateExample() -> Tuple[Dict[str, int], int]:
         # BEGIN_YOUR_CODE (our solution is 3 lines of code, but don't worry if you deviate from this)
-        raise Exception("Not implemented yet")
+        # raise Exception("Not implemented yet")
+        phi={}
+        for item in random.sample(list(weights),random.randint(1,len(weights))):
+            phi[item]=random.randint(1,100)
+        y=1 if dotProduct(weights,phi)>1 else -1
         # END_YOUR_CODE
         return phi, y
 
@@ -102,8 +124,16 @@ def extractCharacterFeatures(n: int) -> Callable[[str], FeatureVector]:
     '''
     def extract(x: str) -> Dict[str, int]:
         # BEGIN_YOUR_CODE (our solution is 6 lines of code, but don't worry if you deviate from this)
-        raise Exception("Not implemented yet")
-        # END_YOUR_CODE
+        # raise Exception("Not implemented yet")
+        new_x = x.replace(' ','')
+        ans = dict()
+        for i in range(len(new_x)-n+1):
+            sub_str = new_x[i:i+n]
+            if sub_str not in ans:
+                ans[sub_str] = 1
+            else: ans[sub_str] += 1
+        return ans
+
 
     return extract
 
@@ -143,9 +173,6 @@ def testValuesOfN(n: int):
 # Problem 5: k-means
 ############################################################
 
-
-
-
 def kmeans(examples: List[Dict[str, float]], K: int,
            maxEpochs: int) -> Tuple[List, List, float]:
     '''
@@ -157,5 +184,53 @@ def kmeans(examples: List[Dict[str, float]], K: int,
             final reconstruction loss)
     '''
     # BEGIN_YOUR_CODE (our solution is 28 lines of code, but don't worry if you deviate from this)
-    raise Exception("Not implemented yet")
+    # raise Exception("Not implemented yet")
+    # we have k clusters
+    centroids=[sample.copy() for sample in random.sample(examples,K)]
+    bestmatch=[random.randint(0,K-1) for item in examples]
+    distances=[0 for item in examples]
+    pastmatches=None
+    examples_squared=[]
+    for item in examples:
+        tempdict=collections.defaultdict(float)
+        for k,v in item.items():
+            tempdict[k]=v*v
+        examples_squared.append(tempdict)
+    for run_range in range(maxEpochs):
+        centroids_squared=[]
+        for item in centroids:
+            tempdict = collections.defaultdict(float)
+            for k, v in item.items():
+                tempdict[k] = v * v
+            centroids_squared.append(tempdict)
+        for index,item in enumerate(examples):
+            min_distance=float('inf')
+            for i,cluster in enumerate(centroids):
+                distance=sum(examples_squared[index].values())+sum(centroids_squared[i].values())
+                for k in set(item.keys() & cluster.keys()):
+                    distance+=-2*item[k]*cluster[k]
+                if distance<min_distance:
+                    min_distance=distance
+                    bestmatch[index]=i
+                    distances[index]=min_distance
+        if pastmatches==bestmatch:
+            break
+        else:
+            clustercounts=[0 for cluster in centroids]
+            for i,cluster in enumerate(centroids):
+                for k in cluster:
+                    cluster[k]=0.0
+            for index,item in enumerate(examples):
+                clustercounts[bestmatch[index]]+=1
+                cluster=centroids[bestmatch[index]]
+                for k,v in item.items():
+                    if k in cluster:
+                        cluster[k]+=v
+                    else:
+                        cluster[k]=0.0+v
+            for i, cluster in enumerate(centroids):
+                for k in cluster:
+                    cluster[k]/=clustercounts[i]
+            pastmatches=bestmatch[:]
+    return centroids,bestmatch,sum(distances)
     # END_YOUR_CODE
