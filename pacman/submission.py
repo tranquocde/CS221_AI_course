@@ -3,7 +3,7 @@ from game import Directions
 import random
 import util
 from typing import Any, DefaultDict, List, Set, Tuple
-
+import numpy as np
 from game import Agent
 from pacman import GameState
 
@@ -91,15 +91,40 @@ class ReflexAgent(Agent):
         # Useful information you can extract from a GameState (pacman.py)
         successorGameState = currentGameState.generatePacmanSuccessor(action)
         newPos = successorGameState.getPacmanPosition()
-        oldFood = currentGameState.getFood()
+        newFood = successorGameState.getFood()
         newGhostStates = successorGameState.getGhostStates()
-        newScaredTimes = [
-            ghostState.scaredTimer for ghostState in newGhostStates]
+        newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
+        newFoodList = np.array(newFood.asList())
+        distanceToFood = [util.manhattanDistance(newPos, food) for food in newFoodList]
+        min_food_distance = 0
+        if len(newFoodList) > 0:
+            min_food_distance = distanceToFood[np.argmin(distanceToFood)]
 
-        return successorGameState.getScore()
+        """Calculate the distance to nearest ghost"""
+        ghostPositions = np.array(successorGameState.getGhostPositions())
+        distanceToGhost = [util.manhattanDistance(newPos, ghost) for ghost in ghostPositions]
+        min_ghost_distance = 0
+        nearestGhostScaredTime = 0
+        if len(ghostPositions) > 0:
+            min_ghost_distance = distanceToGhost[np.argmin(distanceToGhost)]
+            nearestGhostScaredTime = newScaredTimes[np.argmin(distanceToGhost)]
+            # avoid certain death
+            if min_ghost_distance <= 1 and nearestGhostScaredTime == 0:
+                return -999999
+            # eat a scared ghost
+            if min_ghost_distance <= 1 and nearestGhostScaredTime > 0:
+                return 999999
+
+        value = successorGameState.getScore() - min_food_distance
+        if nearestGhostScaredTime > 0:
+            # follow ghosts if scared
+            value -= min_ghost_distance
+        else:
+            value += min_ghost_distance
+        return value
 
 
-def scoreEvaluationFunction(currentGameState: GameState):
+def scoreEvaluationFunction(successorGameState: GameState):
     """
       This default evaluation function just returns the score of the state.
       The score is the same one displayed in the Pacman GUI.
@@ -107,6 +132,42 @@ def scoreEvaluationFunction(currentGameState: GameState):
       This evaluation function is meant for use with adversarial search agents
       (not reflex agents).
     """
+    # return currentGameState.getScore()
+    newPos = successorGameState.getPacmanPosition()
+    newFood = successorGameState.getFood()
+    newGhostStates = successorGameState.getGhostStates()
+    newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
+
+    """Calculate distance to the nearest food"""
+    newFoodList = np.array(newFood.asList())
+    distanceToFood = [util.manhattanDistance(newPos, food) for food in newFoodList]
+    min_food_distance = 0
+    if len(newFoodList) > 0:
+        min_food_distance = distanceToFood[np.argmin(distanceToFood)]
+
+    """Calculate the distance to nearest ghost"""
+    ghostPositions = np.array(successorGameState.getGhostPositions())
+    distanceToGhost = [util.manhattanDistance(newPos, ghost) for ghost in ghostPositions]
+    min_ghost_distance = 0
+    nearestGhostScaredTime = 0
+    if len(ghostPositions) > 0:
+        min_ghost_distance = distanceToGhost[np.argmin(distanceToGhost)]
+        nearestGhostScaredTime = newScaredTimes[np.argmin(distanceToGhost)]
+        # avoid certain death
+        if min_ghost_distance <= 1 and nearestGhostScaredTime == 0:
+            return -999999
+        # eat a scared ghost
+        if min_ghost_distance <= 1 and nearestGhostScaredTime > 0:
+            return 999999
+
+    value = successorGameState.getScore() - min_food_distance
+    if nearestGhostScaredTime > 0:
+        # follow ghosts if scared
+        value -= min_ghost_distance
+    else:
+        value += min_ghost_distance
+    return value
+
     return currentGameState.getScore()
 
 

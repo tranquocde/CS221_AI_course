@@ -59,38 +59,129 @@ def tinyMazeSearch(problem):
   w = Directions.WEST
   return  [s,s,w,s,w,w,s,w]
 
-def depthFirstSearch(problem):
-  """
-  Search the deepest nodes in the search tree first [p 85].
-  
-  Your search algorithm needs to return a list of actions that reaches
-  the goal.  Make sure to implement a graph search algorithm [Fig. 3.7].
-  
-  To get started, you might want to try some of these simple commands to
-  understand the search problem that is being passed in:
-  
-  print "Start:", problem.getStartState()
-  print "Is the start a goal?", problem.isGoalState(problem.getStartState())
-  print "Start's successors:", problem.getSuccessors(problem.getStartState())
-  """
+class Node:
+    def __init__(self, state, pred, action, priority=0):
+        self.state = state
+        self.pred = pred
+        self.action = action
+        self.priority = priority
+    def __repr__(self):
+        return "State: {0}, Action: {1}".format(self.state, self.action)
+    
+def depthFirstSearch(problem: SearchProblem):
+    """
+    Search the deepest nodes in the search tree first.
 
-def breadthFirstSearch(problem):
-  "Search the shallowest nodes in the search tree first. [p 81]"
-      
-def uniformCostSearch(problem):
-  "Search the node of least total cost first. "
+    Your search algorithm needs to return a list of actions that reaches the
+    goal. Make sure to implement a graph search algorithm.
+
+    To get started, you might want to try some of these simple commands to
+    understand the search problem that is being passed in:
+
+    print("Start:", problem.getStartState())
+    print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
+    print("Start's successors:", problem.getSuccessors(problem.getStartState()))
+    """
+    "*** YOUR CODE HERE ***"
+    # util.raiseNotDefined()
+    
+    
+    closed = dict()
+    frontier = util.Stack()
+    frontier.push(Node(problem.getStartState(), None, None))
+    while frontier.isEmpty() is not True:
+        node = frontier.pop()
+        if problem.isGoalState(node.state) is True:
+            actions = list()
+            while node.action is not None:
+                actions.append(node.action)
+                node = node.pred
+            actions.reverse()
+            return actions
+        if not closed.get(node.state):
+            closed[node.state] = True
+            for succ,action,cost in problem.getSuccessors(node.state):
+                frontier.push(Node(succ, node, action))
+    return list()
+
+def breadthFirstSearch(problem: SearchProblem):
+    """Search the shallowest nodes in the search tree first."""
+    "*** YOUR CODE HERE ***"
+    # util.raiseNotDefined()
+    closed = dict()
+    frontier = util.Queue()
+    frontier.push(Node(problem.getStartState(), None, None))
+    while frontier.isEmpty() is not True:
+        node = frontier.pop()
+        if problem.isGoalState(node.state) is True:
+            actions = list()
+            while node.action is not None:
+                actions.append(node.action)
+                node = node.pred
+            actions.reverse()
+            return actions
+        if not closed.get(node.state):
+            closed[node.state] = True
+            for succ,action,cost in problem.getSuccessors(node.state):
+                frontier.push(Node(succ, node, action))
+    return list()
+
+    
+
+def uniformCostSearch(problem: SearchProblem):
+    """Search the node of least total cost first."""
+    "*** YOUR CODE HERE ***"
+    # util.raiseNotDefined()
+    closed = dict()
+    frontier = util.PriorityQueue()
+    frontier.push(Node(problem.getStartState(), None, None),0)
+    while frontier.isEmpty() is not True:
+        node = frontier.pop()
+        node:Node
+        if problem.isGoalState(node.state) is True:
+            actions = list()
+            while node.action is not None:
+                actions.append(node.action)
+                node = node.pred
+            actions.reverse()
+            return actions
+        if not closed.get(node.state):
+            closed[node.state] = True
+            for succ,action,cost in problem.getSuccessors(node.state):
+                frontier.push(Node(succ, node, action,cost + node.priority),priority=cost + node.priority)
+    return list()
 
 def nullHeuristic(state, problem=None):
-  """
-  A heuristic function estimates the cost from the current state to the nearest
-  goal in the provided SearchProblem.  This heuristic is trivial.
-  """
-  return 0
+    """
+    A heuristic function estimates the cost from the current state to the nearest
+    goal in the provided SearchProblem.  This heuristic is trivial.
+    """
+    return 0
 
-def aStarSearch(problem, heuristic=nullHeuristic):
-  "Search the node that has the lowest combined cost and heuristic first."
-    
-  
+def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic):
+    """Search the node that has the lowest combined cost and heuristic first."""
+    "*** YOUR CODE HERE ***"
+    # util.raiseNotDefined()
+    closed = dict()
+    frontier = util.PriorityQueue()
+    frontier.push(Node(problem.getStartState(), None, None),0)
+    while frontier.isEmpty() is not True:
+        node = frontier.pop()
+        node:Node
+        if problem.isGoalState(node.state) is True:
+            actions = list()
+            while node.action is not None:
+                actions.append(node.action)
+                node = node.pred
+            actions.reverse()
+            return actions
+        if not closed.get(node.state):
+            closed[node.state] = True
+            for succ,action,cost in problem.getSuccessors(node.state):
+                frontier.push(Node(succ, node, action,cost + node.priority),priority=cost + node.priority + heuristic(succ,problem))
+    return list()
+
+
 # Abbreviations
 bfs = breadthFirstSearch
 dfs = depthFirstSearch
